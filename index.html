@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Visor de Aplicaciones de Google Drive</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: sans-serif; }
+        .container { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: #f0f2f5; }
+        .message { text-align: center; padding: 40px; background-color: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        iframe { width: 100%; height: 100%; border: none; display: none; }
+    </style>
+</head>
+<body>
+    <iframe id="viewerFrame"></iframe>
+    <div id="messageContainer" class="container">
+        <div class="message">
+            <h1 id="messageTitle">Cargando...</h1>
+            <p id="messageText">Por favor, espera.</p>
+        </div>
+    </div>
+    <script>
+        // --- CONFIGURACIÓN ---
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxYhPYxQbwvJJQtB7OFge2jAZdkvUrRXXUgTUmVTnY-7NPL_MgaOTwsF2wVXobZB1U/exec'; // <-- ¡IMPORTANTE: Pega tu URL aquí!
+
+        window.onload = function() {
+            const folderId = window.location.hash.substring(1);
+            const msgContainer = document.getElementById('messageContainer');
+            const msgTitle = document.getElementById('messageTitle');
+            const msgText = document.getElementById('messageText');
+            const viewerFrame = document.getElementById('viewerFrame');
+
+            if (!folderId) {
+                msgTitle.textContent = 'Bienvenido al Visor';
+                msgText.innerHTML = 'Para usar, añade el ID de una carpeta de Drive a la URL después de un #.';
+                return;
+            }
+
+            fetch(`${APPS_SCRIPT_URL}?folderId=${folderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) throw new Error(data.details || data.error);
+
+                    const html = data['index.html'] || '';
+                    const css = data['styles.css'] || data['style.css'] || '';
+                    const js = data['app.js'] || data['script.js'] || '';
+
+                    viewerFrame.srcdoc = `<html><head><style>${css}</style></head><body>${html}<script>${js}<\/script></body></html>`;
+                    viewerFrame.style.display = 'block';
+                    msgContainer.style.display = 'none';
+                })
+                .catch(error => {
+                    msgTitle.textContent = 'Error al Cargar';
+                    msgText.textContent = `Razón: ${error.message}`;
+                });
+        };
+    </script>
+</body>
+</html>
